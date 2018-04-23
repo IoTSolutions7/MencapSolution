@@ -1,0 +1,238 @@
+/**
+ *  Resident
+ *
+ *  Copyright Vodafone 2018 Nick
+ *
+ */
+definition(
+    name: "Resident",
+    namespace: "iot.vodafone.com",
+    author: "Nick",
+    description: "Use this app to configure a resident and add in automated tasks such as morning, daily, and night-time tasks.",
+    category: "Family",
+    iconUrl: "https://s3.amazonaws.com/smartapp-icons/Partner/support/quickaction-away.png",
+    iconX2Url: "https://s3.amazonaws.com/smartapp-icons/Partner/support/quickaction-away.png",
+    iconX3Url: "https://s3.amazonaws.com/smartapp-icons/Partner/support/quickaction-away.png")
+
+//----------------------------------------------------------------------------------------------------------------
+preferences {
+	page(name: "pageOne", title: "", nextPage:"pageBedroom", install: false, uninstall: true)  //,submitOnChange: true
+    {
+        section ("Resident Information"){ 
+                //paragraph "This is an example of some text"            
+        		input "residentName", "text", title:"Resident Name", description: "used in notifications", required: true
+                paragraph"Tap Next to continue the set-up by assigning the devices to the resident's rooms.\n\n"
+                
+                href(name: "taskLink", title: "Jump to tasks", page: "pageTasks", description: "", required: false)
+        }
+        remove("Delete Resident", "Delete Resident", "Warning this will remove all the devices configured for their rooms.")
+    
+}
+    page name:"pageBedroom"
+    page name:"pageBathroom"
+    page name:"pageTasks"
+    page name:"pageComplete"
+
+}
+//----------------------------------------------------------------------------------------------------------------
+def pageBedroom() {
+	dynamicPage(name: "pageBedroom", title: "Bedroom set-up", nextPage:"pageBathroom", install: false, uninstall: false) {
+    	section()
+        {
+    		paragraph "Scroll down through the list of equipment below and assign it to the resident's room"
+        }
+		section ("Sensors")
+        {
+            input "bedroomMotion", "capability.motionSensor", required: false, title: "Bedroom Motion Sensors?", multiple: true , hideWhenEmpty: true
+            //	Multipurpose Sensor  Actuator ,contactSensor
+            input "bedroomDoorSwitch", "capability.contactSensor", required: false, title: "Bedroom door sensor?", multiple: false , hideWhenEmpty: true
+            input "clothesSwitch", "capability.contactSensor", required: false, title: "Clothes door/draw sensor?", multiple: false , hideWhenEmpty: true           
+        }
+        section ("Lights")
+        {
+        	//TODO does this need to be updated for our Dimmable light
+            input "bedroomLight", "capability.light", required: false, title: "Bedroom Smart Light?", multiple: false, hideWhenEmpty: true
+            //TODO option light switch
+        }
+        section ("Speakers")
+        {
+            input "bedroomSpeaker", "capability.musicPlayer", required: false, title: "Bedroom Speaker?", multiple: false, hideWhenEmpty: true
+        }
+        section ("Door Entry")
+        {
+            input "bedroomDoorLock", "capability.lock", required: false, title: "Bedroom Door Lock?", multiple: false, hideWhenEmpty: true
+            //TODO add video analytics PI/Camera to this section when available
+        }
+        /*
+        section ("")
+        {
+    		paragraph "Press next to continue"
+        }
+        */
+        
+        
+            //input "bedroomSwitch", "capability.switch", required: false, title: "Bedroom Plug Socket?", multiple: true
+            //, image: "https://s3.amazonaws.com/smartapp-icons/Solution/switches-active.png"                       
+
+	} //def dynamicPage
+}  // def pageBedroom
+//----------------------------------------------------------------------------------------------------------------
+def pageBathroom() {
+	dynamicPage(name: "pageBathroom", title: "Bathroom set-up", nextPage:"pageTasks", install: false, uninstall: false) {
+    	section()
+        {
+    		paragraph "Scroll down through the list of equipment below and assign it to the resident's room"
+        }
+		section ("Type:")
+        {
+            input "isEnSuite", "bool", title:"Is it en-suite?", description: "", required: false
+        }
+        section ("Sensors")
+        {
+            input "bathroomMotion", "capability.motionSensor", required: false, title: "Bathroom Motion Sensors?"
+            //	Multipurpose Sensor  Actuator ,contactSensor
+            input "bathroomDoorSwitch", "capability.contactSensor", required: false, title: "Bathroom door sensor?", multiple: false
+        }
+        section ("Lights")
+        {
+        	//TODO does this need to be updated for our Dimmable light
+            input "bathroomLight", "capability.light", required: false, title: "Bedroom Smart Light?", multiple: false
+            //TODO option light switch
+        }             
+	} //def dynamicPage
+}  // def pageBathroom
+//----------------------------------------------------------------------------------------------------------------
+def pageTasks() {
+	log.debug "pageTasks settings: ${settings}"
+    def theChildMR = findChildAppByName("Resident Morning Tasks")
+    def theChildNR = findChildAppByName("Resident Night Tasks")
+
+
+	dynamicPage(name: "pageTasks", title: "Choose which tasks you want to be automated", nextPage:"pageComplete", install: false, uninstall: false) {
+    	
+		section ("Active Tasks"){
+        	if (theChildMR)
+            {
+            app(name: "residentMorningTasks", appName: "Resident Morning Tasks", namespace: "iot.vodafone.com", title: "Edit Morning Tasks...", multiple: false 
+            	,image: "https://s3.amazonaws.com/smartapp-icons/ModeMagic/rise-and-shine.png")
+            }
+            if (theChildNR)
+        	{
+                app(name: "residentNightTasks", appName: "Resident Night Tasks", namespace: "iot.vodafone.com", title: "Edit Night Tasks...", multiple: false 
+                    ,image: "https://s3.amazonaws.com/smartapp-icons/ModeMagic/good-night.png")
+        	}     
+		} //section Active Routines
+        
+        section ("Not added"){
+        	if (!theChildMR)
+            {
+            app(name: "residentMorningTasks", appName: "Resident Morning Tasks", namespace: "iot.vodafone.com", title: "Add Morning Tasks...", multiple: false 
+            	,image: "https://s3.amazonaws.com/smartapp-icons/ModeMagic/rise-and-shine.png")
+            }
+            if (!theChildNR)
+        	{
+                app(name: "residentNightTasks", appName: "Resident Night Tasks", namespace: "iot.vodafone.com", title: "Add Night Tasks...", multiple: false 
+                 ,image: "https://s3.amazonaws.com/smartapp-icons/ModeMagic/good-night.png")
+        	}     
+		} //section New Routines
+        
+        /*
+        section()
+        {
+        	paragraph "Please remember to press Save to store the changes."
+        }
+        */
+        
+       		
+	} //def dynamicPage
+}  // def pageTasks
+//----------------------------------------------------------------------------------------------------------------
+def pageComplete() {
+	dynamicPage(name: "pageComplete", title: "", install: true, uninstall: false) 
+    {
+    
+		section ("") {
+        		 paragraph "Configuration is complete. \n\nDo not forget to press Save to store settings.\n\n"
+
+				}
+        
+        //remove("Delete Resident", "Delete Resident", "Warning this will remove all the devices configured for their rooms.")
+	}
+} //pageComplete
+//----------------------------------------------------------------------------------------------------------------
+def installed() {
+	log.debug "Installed with settings: ${settings}"
+	app.updateLabel("${settings.residentName}") //update the app name to by the resident
+	initialize()
+}
+
+def updated() {
+	log.debug "Updated with settings: ${settings}"
+
+ 	app.updateLabel("${settings.residentName}")
+    
+    
+
+	unsubscribe()
+	initialize()
+}
+
+
+def initialize() {
+
+	// TODO: subscribe to attributes, devices, locations, etc.
+
+// DEBUG LIST DEVICE CAPABILITIES
+/*
+	if (bedroomSpeaker)
+    {
+    	try
+        {
+        def supportedCaps = bedroomSpeaker?.capabilities
+        supportedCaps.each {cap ->
+            log.debug "Speaker device supports the [${cap.name}] capability"
+        }
+        }
+        catch (e)
+        {
+        	log.debug "initialize() - exception"
+		}
+
+    }
+*/    
+//Speaker device supports the [Audio Notification] capability
+//Speaker device supports the [Health Check] capability
+//Speaker device supports the [Actuator] capability
+//Speaker device supports the [Sensor] capability
+//Speaker device supports the [Music Player] capability
+//Speaker device supports the [Refresh] capability
+//Speaker device supports the [Switch] capability
+
+	/*
+	def iURL = getApiServerUrl()
+	log.debug "URL=${iURL}"
+    //URL=https://graph-eu01-euwest1.api.smartthings.com:443
+    */
+
+	/*
+    log.debug "there are ${allChildApps.size()} child smartapps available"
+	allChildApps.each {child ->
+    	log.debug "ALL child app: ${child.label}"
+    }
+
+    // this just logs some messages for demo/information purposes
+    log.debug "there are ${childApps.size()} child smartapps installed"
+    childApps.each {child ->
+        log.debug "INSTALLED child app: ${child.label}"
+    }
+    */
+}
+
+def getTheResidentName() {
+	log.debug "getTheResidentName ${settings.residentName}"
+	//${settings.residentName}
+    return settings.residentName
+}
+
+
+// TODO: implement event handlers
